@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Q&A Universidad Continental</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Rajdhani', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .chat-container {
+            width: 400px;
+            height: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-header {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        .chat-box {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            max-width: 80%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+        }
+        .user-message {
+            align-self: flex-end;
+            background: #00d4ff;
+            color: #000;
+        }
+        .assistant-message {
+            align-self: flex-start;
+            background: #4c51bf;  /* Burbuja de respuesta */
+            color: #fff;  /* Color del texto */
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .assistant-message a {
+            color: #00d4ff;  /* Color brillante para el enlace */
+            text-decoration: none;  /* Elimina el subrayado por defecto */
+        }
+
+        .assistant-message a:hover {
+            color: #00a8cc;  /* Color del enlace al pasar el ratón */
+            text-decoration: underline;  /* Subraya el enlace al pasar el ratón */
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .typing { 
+            align-self: flex-start;
+            font-size: 12px;
+            color: #aaa;
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-top: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+            font-size: 14px;
+        }
+        button {
+            margin-left: 10px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background: #00d4ff;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #00a8cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">Chatbot Q&A Universidad Continental</div>
+        <div class="chat-box" id="chat-box"></div>
+        <div class="chat-input">
+            <input type="text" id="input" placeholder="Escribe un mensaje..." onkeypress="handleKeyPress(event)" />
+            <button onclick="sendMessage()">Enviar</button>
+        </div>
+    </div>
+    <script>
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        async function sendMessage() {
+            const userInput = document.getElementById('input').value;
+            if (userInput === '') return;
+
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML += `<div class='message user-message'>${userInput}</div>`;
+            document.getElementById('input').value = '';
+
+            // Mostrar animación de escritura del asistente
+            const typingIndicator = document.createElement('div');
+            typingIndicator.classList.add('typing');
+            typingIndicator.innerText = 'Asistente está escribiendo...';
+            chatBox.appendChild(typingIndicator);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_input: userInput })
+            });
+            
+            const data = await response.json();
+            chatBox.removeChild(typingIndicator);
+            
+            if (data.response) {
+                let cleanResponse = data.response.replace(/\n/g, '<br>'); 
+cleanResponse = cleanResponse.replace(/\【.*?\】/g, '<br><i>Fuente: <a href="https://sites.google.com/continental.edu.pe/aulavirtualsoporte/preguntas-frecuentes" target="_blank">Soporte UC</a></i>'); 
+
+chatBox.innerHTML += `<div class='message assistant-message'>${cleanResponse}</div>`;
+            } else {
+                chatBox.innerHTML += `<div class='message assistant-message'>No se recibió respuesta</div>`;
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
